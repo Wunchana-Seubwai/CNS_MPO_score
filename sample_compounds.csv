@@ -1,0 +1,11 @@
+smiles,name
+CN1CCC[C@H]1c2cccnc2,Nicotine
+CC(=O)Oc1ccccc1C(=O)O,Aspirin
+Cc1ccc(cc1)S(=O)(=O)N,Toluenesulfonamide
+O=C1CN=C(c2ccccc2Cl)c3cc(Cl)ccc13,Diazepam
+COc1ccc2[nH]cc(CCN(C)C)c2c1,Sumatriptan (analog)
+c1ccc(Cn2ccnc2)cc1,Clotrimazole (analog)
+CC(C)Cc1ccc(cc1)C(C)C(=O)O,Ibuprofen
+Clc1ccc(cc1)C(c2ccccc2)N3CCNCC3,Meclizine (analog)
+CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C,Testosterone
+c1ccc2c(c1)cc1ccc3cccc4ccc2c1c34,Pyrene
