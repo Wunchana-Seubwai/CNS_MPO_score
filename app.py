@@ -3,7 +3,6 @@ CNS MPO Score Calculator — Streamlit App
 ========================================
 Calculates the six-property CNS Multiparameter Optimization score
 (Wager et al., ACS Chem. Neurosci. 2010) from SMILES input.
-https://pubmed.ncbi.nlm.nih.gov/22778837/
 
 Run locally:
     streamlit run app.py
@@ -45,27 +44,194 @@ st.set_page_config(
 # ── Custom CSS ────────────────────────────────────────────────────────────────
 st.markdown(
     """
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
     <style>
+    /* ── Global typography ─────────────────────────────────────── */
+    html, body, [class*="css"], .stApp, .main, .block-container {
+        font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        color: #1a2332;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Crimson Pro', Georgia, 'Times New Roman', serif !important;
+        color: #0d2818 !important;
+        letter-spacing: -0.01em;
+        font-weight: 600 !important;
+    }
+    code, .stCodeBlock {
+        font-family: 'JetBrains Mono', 'Courier New', monospace !important;
+    }
+
+    /* ── Title block ───────────────────────────────────────────── */
     .main-title {
-        font-size: 2.2rem; font-weight: 700;
-        background: linear-gradient(90deg, #1a73e8, #0d47a1);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        font-family: 'Crimson Pro', Georgia, serif !important;
+        font-size: 2.4rem;
+        font-weight: 700;
+        color: #0d3b22;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.2rem;
     }
+    .main-subtitle {
+        font-family: 'Source Sans 3', sans-serif;
+        font-size: 1.02rem;
+        color: #3a4a52;
+        line-height: 1.5;
+        margin-top: 0.2rem;
+    }
+    .main-subtitle b { color: #0d3b22; font-weight: 600; }
+    .ref-link {
+        display: inline-block;
+        margin-top: 0.4rem;
+        font-size: 0.88rem;
+        color: #1f5f3f;
+        text-decoration: none;
+        border-bottom: 1px dotted #1f5f3f;
+        font-family: 'Source Sans 3', sans-serif;
+    }
+    .ref-link:hover {
+        color: #0d3b22;
+        border-bottom-color: #0d3b22;
+    }
+    .title-rule {
+        border: none;
+        border-top: 2px solid #0d3b22;
+        width: 60px;
+        margin: 0.8rem 0 1rem 0;
+    }
+
+    /* ── Score box (verdict card) ──────────────────────────────── */
     .score-box {
-        border-radius: 12px; padding: 20px; text-align: center;
-        font-size: 3rem; font-weight: 800; margin: 10px 0;
+        border-radius: 6px;
+        padding: 22px;
+        text-align: center;
+        font-family: 'Crimson Pro', Georgia, serif;
+        font-size: 2.8rem;
+        font-weight: 700;
+        margin: 10px 0;
+        letter-spacing: -0.02em;
     }
-    .score-green  { background: #e8f5e9; color: #2e7d32; border: 2px solid #43a047; }
-    .score-orange { background: #fff3e0; color: #e65100; border: 2px solid #fb8c00; }
-    .score-red    { background: #ffebee; color: #c62828; border: 2px solid #e53935; }
+    .score-green  { background: #f1f7f1; color: #1b5e20; border: 1.5px solid #1b5e20; }
+    .score-orange { background: #fdf6ec; color: #8a4a00; border: 1.5px solid #8a4a00; }
+    .score-red    { background: #fbf0ef; color: #8b1a1a; border: 1.5px solid #8b1a1a; }
+
+    /* ── Property cards ────────────────────────────────────────── */
     .prop-card {
-        background: #f8f9fa; border-radius: 8px;
-        padding: 12px; margin: 4px 0; text-align: center;
+        background: #fafbfc;
+        border: 1px solid #e3e8ed;
+        border-radius: 4px;
+        padding: 12px;
+        margin: 4px 0;
+        text-align: center;
+        font-family: 'Source Sans 3', sans-serif;
     }
+
+    /* ── Section header ────────────────────────────────────────── */
     .section-header {
-        font-size: 1.1rem; font-weight: 600;
-        border-bottom: 2px solid #1a73e8;
-        padding-bottom: 4px; margin: 16px 0 8px 0;
+        font-family: 'Crimson Pro', Georgia, serif !important;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #0d3b22 !important;
+        border-bottom: 1.5px solid #0d3b22;
+        padding-bottom: 4px;
+        margin: 18px 0 10px 0;
+        letter-spacing: -0.01em;
+    }
+
+    /* ── Primary button: WHITE bg with DARK GREEN border ──────── */
+    .stButton > button[kind="primary"],
+    .stButton > button[data-testid="baseButton-primary"] {
+        background-color: #ffffff !important;
+        color: #0d3b22 !important;
+        border: 2px solid #0d3b22 !important;
+        border-radius: 4px !important;
+        font-family: 'Source Sans 3', sans-serif !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.02em !important;
+        transition: all 0.15s ease-in-out !important;
+        box-shadow: none !important;
+    }
+    .stButton > button[kind="primary"]:hover,
+    .stButton > button[data-testid="baseButton-primary"]:hover {
+        background-color: #0d3b22 !important;
+        color: #ffffff !important;
+        border-color: #0d3b22 !important;
+    }
+    .stButton > button[kind="primary"]:active,
+    .stButton > button[kind="primary"]:focus {
+        background-color: #f1f7f1 !important;
+        color: #0d3b22 !important;
+        border-color: #0d3b22 !important;
+        box-shadow: 0 0 0 2px rgba(13, 59, 34, 0.15) !important;
+    }
+    /* Secondary buttons (download etc.) same treatment, slightly lighter */
+    .stButton > button:not([kind="primary"]):not([data-testid="baseButton-primary"]) {
+        background-color: #ffffff !important;
+        color: #1f5f3f !important;
+        border: 1.5px solid #1f5f3f !important;
+        border-radius: 4px !important;
+        font-family: 'Source Sans 3', sans-serif !important;
+        font-weight: 500 !important;
+    }
+    .stButton > button:not([kind="primary"]):not([data-testid="baseButton-primary"]):hover {
+        background-color: #1f5f3f !important;
+        color: #ffffff !important;
+    }
+    .stDownloadButton > button {
+        background-color: #ffffff !important;
+        color: #0d3b22 !important;
+        border: 1.5px solid #0d3b22 !important;
+        border-radius: 4px !important;
+        font-family: 'Source Sans 3', sans-serif !important;
+        font-weight: 500 !important;
+    }
+    .stDownloadButton > button:hover {
+        background-color: #0d3b22 !important;
+        color: #ffffff !important;
+    }
+
+    /* ── Tabs (academic look) ──────────────────────────────────── */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 1.5rem;
+        border-bottom: 1px solid #d1dad3;
+    }
+    .stTabs [data-baseweb="tab"] {
+        font-family: 'Source Sans 3', sans-serif !important;
+        font-weight: 600 !important;
+        color: #5a6b6f !important;
+        padding: 0.5rem 0.2rem !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #0d3b22 !important;
+        border-bottom: 2.5px solid #0d3b22 !important;
+    }
+
+    /* ── Input fields ──────────────────────────────────────────── */
+    .stTextInput input, .stTextArea textarea {
+        font-family: 'JetBrains Mono', monospace !important;
+        border-radius: 4px !important;
+        border: 1px solid #c5cfc8 !important;
+    }
+    .stTextInput input:focus, .stTextArea textarea:focus {
+        border-color: #0d3b22 !important;
+        box-shadow: 0 0 0 1px #0d3b22 !important;
+    }
+
+    /* ── Sidebar styling ───────────────────────────────────────── */
+    [data-testid="stSidebar"] {
+        background-color: #f7f8f7;
+        border-right: 1px solid #d1dad3;
+    }
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 {
+        font-family: 'Crimson Pro', Georgia, serif !important;
+        color: #0d3b22 !important;
+    }
+
+    /* ── Dataframes ────────────────────────────────────────────── */
+    .stDataFrame {
+        font-family: 'Source Sans 3', sans-serif !important;
     }
     </style>
     """,
@@ -122,8 +288,8 @@ def radar_chart(scores: dict, title: str = "") -> go.Figure:
     # Compound scores
     total = sum(vals)
     if total >= 4:
-        fill_color = "rgba(26, 115, 232, 0.20)"
-        line_color = "rgba(26, 115, 232, 0.9)"
+        fill_color = "rgba(13, 59, 34, 0.18)"
+        line_color = "rgba(13, 59, 34, 0.9)"
     elif total >= 3:
         fill_color = "rgba(251, 140, 0, 0.20)"
         line_color = "rgba(251, 140, 0, 0.9)"
@@ -158,7 +324,7 @@ def score_bar_chart(scores: dict) -> go.Figure:
     """Horizontal bar chart of individual scores."""
     props = list(scores.keys())
     vals  = list(scores.values())
-    colors = ["#43a047" if v >= 0.7 else "#fb8c00" if v >= 0.4 else "#e53935" for v in vals]
+    colors = ["#1b5e20" if v >= 0.7 else "#8a4a00" if v >= 0.4 else "#8b1a1a" for v in vals]
 
     fig = go.Figure(go.Bar(
         y=props, x=vals,
@@ -213,7 +379,7 @@ def generate_assessment(props: dict, scores: dict, total: float) -> dict:
     elif props["MW"] <= 500:
         commentary.append(("MW", "warn",
             f"Molecular weight ({props['MW']:.1f} Da) is acceptable but above the "
-            f"optimal 360 Da threshold: heavier molecules cross the BBB less efficiently."))
+            f"optimal 360 Da threshold — heavier molecules cross the BBB less efficiently."))
     else:
         commentary.append(("MW", "bad",
             f"Molecular weight ({props['MW']:.1f} Da) exceeds the upper limit of 500 Da. "
@@ -236,7 +402,7 @@ def generate_assessment(props: dict, scores: dict, total: float) -> dict:
     # cLogD
     if props["cLogD"] <= 2:
         commentary.append(("cLogD", "good",
-            f"cLogD at pH 7.4 ({props['cLogD']:.2f}) is optimal favorable distribution "
+            f"cLogD at pH 7.4 ({props['cLogD']:.2f}) is optimal — favorable distribution "
             f"between aqueous and lipid phases."))
     elif props["cLogD"] <= 4:
         commentary.append(("cLogD", "warn",
@@ -264,7 +430,7 @@ def generate_assessment(props: dict, scores: dict, total: float) -> dict:
     # HBD
     if props["HBD"] == 0:
         commentary.append(("HBD", "good",
-            f"No H-bond donors: ideal for BBB crossing."))
+            f"No H-bond donors — ideal for BBB crossing."))
     elif props["HBD"] <= 2:
         commentary.append(("HBD", "warn",
             f"{props['HBD']} H-bond donor(s) — still acceptable but each additional "
@@ -281,7 +447,7 @@ def generate_assessment(props: dict, scores: dict, total: float) -> dict:
             f"at physiological pH supports passive permeability."))
     elif props["pKa"] <= 10:
         commentary.append(("pKa", "warn",
-            f"pKa ({props['pKa']:.1f}) is elevated the compound is largely "
+            f"pKa ({props['pKa']:.1f}) is elevated — the compound is largely "
             f"protonated at pH 7.4, reducing passive BBB diffusion."))
     else:
         commentary.append(("pKa", "bad",
@@ -325,11 +491,11 @@ def generate_assessment(props: dict, scores: dict, total: float) -> dict:
 def mpo_gauge(total: float) -> go.Figure:
     """Gauge chart for total CNS MPO score."""
     if total >= 4:
-        bar_color = "#43a047"
+        bar_color = "#1b5e20"
     elif total >= 3:
-        bar_color = "#fb8c00"
+        bar_color = "#8a4a00"
     else:
-        bar_color = "#e53935"
+        bar_color = "#8b1a1a"
 
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
@@ -411,10 +577,21 @@ with st.sidebar:
 
 # ── Main UI ───────────────────────────────────────────────────────────────────
 
-st.markdown('<p class="main-title">🧠 CNS MPO Score Calculator</p>', unsafe_allow_html=True)
 st.markdown(
-    "Calculate the **six-property CNS Multiparameter Optimization** score "
-    "from SMILES — Wager *et al.* (2010)"
+    """
+    <p class="main-title">🧠 CNS MPO Score Calculator</p>
+    <p class="main-subtitle">
+        Calculate the <b>six-property CNS Multiparameter Optimization</b> score
+        from SMILES&nbsp;:&nbsp; Wager <i>et&nbsp;al.</i> (2010)
+    </p>
+    <a class="ref-link"
+       href="https://pubmed.ncbi.nlm.nih.gov/22778837/"
+       target="_blank" rel="noopener noreferrer">
+       📑 Reference&nbsp;: PubMed 22778837
+    </a>
+    <hr class="title-rule">
+    """,
+    unsafe_allow_html=True,
 )
 
 tab1, tab2 = st.tabs(["🔬 Single Molecule", "📊 Batch Analysis"])
@@ -719,7 +896,7 @@ with tab2:
                 fig_hist = go.Figure(go.Histogram(
                     x=mpo_vals, nbinsx=12,
                     marker_color=[
-                        "#43a047" if v >= 4 else "#fb8c00" if v >= 3 else "#e53935"
+                        "#1b5e20" if v >= 4 else "#8a4a00" if v >= 3 else "#8b1a1a"
                         for v in mpo_vals
                     ],
                     xbins=dict(start=0, end=6, size=0.5),
