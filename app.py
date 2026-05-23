@@ -3,6 +3,7 @@ CNS MPO Score Calculator — Streamlit App
 ========================================
 Calculates the six-property CNS Multiparameter Optimization score
 (Wager et al., ACS Chem. Neurosci. 2010) from SMILES input.
+https://pubmed.ncbi.nlm.nih.gov/22778837/
 
 Run locally:
     streamlit run app.py
