@@ -1,5 +1,5 @@
-streamlit>=1.36.0
-pandas>=2.2.0
-numpy>=1.26.0
-openpyxl>=3.1.5
-rdkit-pypi>=2022.9.5
+streamlit
+pandas
+numpy
+openpyxl
+rdkit-pypi==2022.9.5
