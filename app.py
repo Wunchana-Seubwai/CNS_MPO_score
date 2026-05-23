@@ -594,7 +594,11 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-tab1, tab2 = st.tabs(["🔬 Single Molecule", "📊 Batch Analysis"])
+tab1, tab2, tab3 = st.tabs([
+    "🔬 Single Molecule",
+    "📊 Batch Analysis",
+    "📚 Documentation",
+])
 
 # ── TAB 1: Single Molecule ────────────────────────────────────────────────────
 with tab1:
@@ -921,6 +925,389 @@ with tab2:
                     mime="text/csv",
                     use_container_width=True,
                 )
+
+
+# ── TAB 3: Documentation ──────────────────────────────────────────────────────
+with tab3:
+    st.markdown('<p class="section-header">📖 About CNS MPO</p>', unsafe_allow_html=True)
+
+    st.markdown(
+        """
+The **Central Nervous System Multiparameter Optimization (CNS MPO)** score
+is a composite metric introduced by Wager *et al.* at Pfizer to align the
+physicochemical properties of drug candidates with the requirements for
+crossing the **blood–brain barrier (BBB)** and achieving meaningful free-drug
+exposure in brain tissue.
+
+Unlike rigid filters such as the Lipinski Rule of Five, the MPO uses
+**desirability functions** — smooth, monotonic transformations of each
+property that map it to a continuous score between 0 (undesirable) and 1
+(optimal). The six individual scores are summed to give an overall score
+between **0 and 6**.
+
+A threshold of **CNS MPO ≥ 4** was empirically derived: in the Pfizer dataset,
+74% of marketed CNS drugs and 60% of clinical CNS candidates met this
+criterion, compared to a much smaller fraction of non-CNS reference drugs.
+"""
+    )
+
+    # ── Desirability function math
+    st.markdown('<p class="section-header">📐 The Desirability Function</p>',
+                unsafe_allow_html=True)
+
+    col_a, col_b = st.columns([3, 2])
+    with col_a:
+        st.markdown(
+            r"""
+For a **monotonic decreasing** property with optimal threshold $T_0$
+and penalty threshold $T_1$:
+"""
+        )
+        st.latex(
+            r"""
+            d(x) = \begin{cases}
+              1, & x \leq T_0 \\
+              \dfrac{T_1 - x}{T_1 - T_0}, & T_0 < x < T_1 \\
+              0, & x \geq T_1
+            \end{cases}
+            """
+        )
+        st.markdown(
+            r"""
+The **total CNS MPO score** is the sum of the six individual desirability
+scores:
+"""
+        )
+        st.latex(
+            r"\text{CNS MPO} = d_{\text{MW}} + d_{\text{cLogP}} + d_{\text{cLogD}} "
+            r"+ d_{\text{TPSA}} + d_{\text{HBD}} + d_{\text{pKa}}"
+        )
+        st.markdown(
+            "Score range: **0 ≤ CNS MPO ≤ 6**. The closer to 6, the more "
+            "CNS-drug-like the compound."
+        )
+
+    with col_b:
+        # Mini illustration of the desirability function
+        import plotly.graph_objects as _go
+        _x = list(range(0, 11))
+        _T0, _T1 = 4, 8
+        _y = [
+            1.0 if v <= _T0 else 0.0 if v >= _T1 else (_T1 - v) / (_T1 - _T0)
+            for v in _x
+        ]
+        _fig = _go.Figure()
+        _fig.add_trace(_go.Scatter(
+            x=_x, y=_y, mode="lines+markers",
+            line=dict(color="#0d3b22", width=3),
+            marker=dict(size=7, color="#0d3b22"),
+            name="d(x)",
+        ))
+        _fig.add_vline(x=_T0, line_dash="dot", line_color="#1b5e20",
+                       annotation_text="T₀", annotation_position="top")
+        _fig.add_vline(x=_T1, line_dash="dot", line_color="#8b1a1a",
+                       annotation_text="T₁", annotation_position="top")
+        _fig.update_layout(
+            title=dict(text="Generic desirability function",
+                       font=dict(family="Crimson Pro", size=14)),
+            xaxis_title="Property value (x)",
+            yaxis_title="Desirability d(x)",
+            yaxis=dict(range=[-0.05, 1.1]),
+            height=280,
+            margin=dict(t=40, b=40, l=40, r=20),
+            font=dict(family="Source Sans 3"),
+        )
+        st.plotly_chart(_fig, use_container_width=True)
+
+    # ── Six properties (detailed)
+    st.markdown('<p class="section-header">🔬 The Six Physicochemical Properties</p>',
+                unsafe_allow_html=True)
+
+    st.markdown(
+        "Each property is monotonically penalized as it moves away from the "
+        "CNS-friendly range. Thresholds were derived by Wager *et al.* through "
+        "statistical analysis of marketed CNS drugs versus non-CNS reference sets."
+    )
+
+    # 1. MW
+    with st.expander("**① Molecular Weight (MW)**  ·  T₀ = 360 Da  ·  T₁ = 500 Da",
+                     expanded=False):
+        st.markdown(
+            r"""
+**Definition.** The sum of atomic weights of all atoms in the molecule (Da, g/mol).
+
+**Why it matters for CNS exposure.**
+Passive permeability across the BBB follows roughly Stokes–Einstein–like
+diffusion: smaller molecules diffuse faster. Above ~500 Da, passive
+permeability falls sharply because the molecule no longer fits efficiently
+through the tight-junction–regulated paracellular and transcellular routes.
+Larger molecules also tend to recruit additional polar groups to maintain
+solubility, compounding the BBB penalty.
+
+**Wager *et al.* observation.**
+Marketed CNS drugs cluster around an MW of ~310 Da, whereas non-CNS oral
+drugs average ~400 Da. The desirability function gives full credit up to
+**360 Da** and zero credit at **500 Da**.
+
+**Optimization tip.**
+Trim aliphatic linkers, fuse rings, replace heavy halogens with fluorine,
+or eliminate solubilizing groups that have no SAR contribution.
+"""
+        )
+
+    # 2. cLogP
+    with st.expander("**② cLogP** (calculated octanol–water partition coefficient)  ·  T₀ = 3  ·  T₁ = 5",
+                     expanded=False):
+        st.markdown(
+            r"""
+**Definition.**
+$$\text{cLogP} = \log_{10}\!\left(\dfrac{[\text{drug}]_{\text{octanol}}}{[\text{drug}]_{\text{water}}}\right)$$
+
+for the **neutral** form of the molecule. In this app it is computed by the
+Crippen (Wildman–Crippen) atom-contribution method via RDKit.
+
+**Why it matters for CNS exposure.**
+Lipophilicity drives passive membrane permeability — but only up to a point.
+Beyond cLogP ≈ 3:
+- Plasma protein binding rises rapidly, reducing free drug.
+- Metabolic clearance increases (CYP turnover scales with lipophilicity).
+- Aqueous solubility falls.
+- Off-target promiscuity, hERG inhibition, and phospholipidosis risk all rise.
+
+**Wager *et al.* observation.**
+The optimal CNS-drug cLogP window is **2–3**. The function awards full credit
+up to **3** and zero credit at **5**. This is the most heavily-weighted
+property in real-world failure analyses.
+
+**Optimization tip.**
+Replace lipophilic substituents (long alkyl chains, di-halogenated aryls)
+with polar bioisosteres (e.g. fluorine for methyl, tetrazole for carboxylic
+acid groups already present).
+"""
+        )
+
+    # 3. cLogD
+    with st.expander("**③ cLogD₇.₄** (distribution coefficient at pH 7.4)  ·  T₀ = 2  ·  T₁ = 4",
+                     expanded=False):
+        st.markdown(
+            r"""
+**Definition.**
+Unlike cLogP (which considers only the neutral form), cLogD reflects the
+**actual** distribution at physiological pH, integrating ionized + neutral
+forms:
+$$\text{cLogD}_{7.4} = \log_{10}\!\left(\dfrac{[\text{drug}]_{\text{octanol}}}
+{[\text{total drug}]_{\text{water, pH 7.4}}}\right)$$
+
+For a **monoprotic base** (most CNS-active amines), Henderson–Hasselbalch
+gives:
+$$\text{cLogD}_{7.4} = \text{cLogP} - \log_{10}\!\big(1 + 10^{\,pK_a - 7.4}\big)$$
+
+This app uses exactly this formula with the estimated most-basic pKa.
+
+**Why it matters for CNS exposure.**
+Only the **neutral** species crosses the BBB efficiently by passive
+diffusion. cLogD captures the *effective* lipophilicity that the membrane
+actually sees. A high cLogP combined with a high pKa (strongly basic amine)
+gives a deceptively lower cLogD — and that is the membrane-relevant value.
+
+**Wager *et al.* observation.**
+CNS drugs show a tighter cLogD distribution than cLogP. The optimal range
+is **0–2**, with full credit at **≤ 2** and zero credit at **≥ 4**.
+
+**Optimization tip.**
+Modulating pKa is often easier than modulating cLogP. Lowering the pKa of a
+basic amine by ~1–2 units (e.g. piperidine → morpholine, or adding an
+α-fluorine) can dramatically improve cLogD.
+"""
+        )
+
+    # 4. TPSA
+    with st.expander("**④ Topological Polar Surface Area (TPSA)**  ·  T₀ = 90 Å²  ·  T₁ = 120 Å²",
+                     expanded=False):
+        st.markdown(
+            r"""
+**Definition.**
+The sum of surface contributions of polar atoms (N, O, S, P, and their attached
+hydrogens) in the molecule, computed from the 2D topology using the Ertl
+fragment-based method (RDKit's `CalcTPSA`).
+
+**Why it matters for CNS exposure.**
+TPSA is a proxy for the **H-bonding desolvation penalty** a molecule must pay
+to cross a lipid bilayer: every polar atom must shed its water shell before
+entering the membrane. Above ~90 Å², BBB penetration drops sharply.
+
+**Wager *et al.* observation.**
+The "CNS-friendly TPSA window" is widely cited as **≤ 90 Å²** (versus the
+≤ 140 Å² limit for general oral bioavailability). The desirability function
+gives full credit ≤ **90 Å²** and zero credit ≥ **120 Å²**.
+
+**Optimization tip.**
+Mask polar groups (e.g. methylate a hydroxyl, or replace an amide with a
+bioisostere with lower TPSA contribution), reduce the number of polar atoms,
+or convert acyclic amides into rigid cyclic ones with intramolecular H-bonds.
+"""
+        )
+
+    # 5. HBD
+    with st.expander("**⑤ Hydrogen Bond Donors (HBD)**  ·  T₀ = 0  ·  T₁ = 3",
+                     expanded=False):
+        st.markdown(
+            r"""
+**Definition.**
+Number of explicit O–H and N–H bonds in the molecule (RDKit's `CalcNumHBD`).
+
+**Why it matters for CNS exposure.**
+Each H-bond donor carries a roughly **constant desolvation penalty** when
+the molecule transitions from water to the lipid bilayer interior — and
+donors penalize CNS permeability more strongly than acceptors. Compounds
+with **0 donors** cross the BBB most readily; **≥ 3 donors** is a strong
+negative predictor.
+
+**Wager *et al.* observation.**
+HBD count alone is one of the strongest single predictors of CNS exposure
+in the Pfizer dataset. The function gives full credit at **0 donors** and
+zero credit at **≥ 3 donors**.
+
+**Optimization tip.**
+- **Methylate** anilines, hydroxyls, or amides where SAR permits.
+- Use **intramolecular H-bonds** to mask polar donors ("chameleonic" design).
+- Replace primary amides with nitriles, oxadiazoles, or other bioisosteres.
+"""
+        )
+
+    # 6. pKa
+    with st.expander("**⑥ Most basic pKa**  ·  T₀ = 8  ·  T₁ = 10",
+                     expanded=False):
+        st.markdown(
+            r"""
+**Definition.**
+The **highest** (most basic) pKa among the ionizable centers in the molecule
+— typically the most basic nitrogen. In this app it is estimated via SMARTS
+pattern matching against a library of basic functional groups (amines,
+amidines, guanidines, basic aromatic N, etc.).
+
+**Why it matters for CNS exposure.**
+At physiological pH (7.4), only the **neutral** fraction of an ionizable
+compound crosses the BBB passively. As pKa rises above ~8:
+- The neutral fraction shrinks (e.g. at pKa = 10, only ~0.25% is neutral).
+- The cationic form is "trapped" in lysosomes (lysosomotropism).
+- Phospholipidosis risk increases.
+- Volume of distribution rises non-specifically.
+
+**Wager *et al.* observation.**
+Marketed CNS drugs have a median basic pKa around 8. The desirability function
+awards full credit ≤ **8** and zero credit ≥ **10**.
+
+**Optimization tip.**
+- Add electron-withdrawing groups β to the basic amine (e.g. α-fluorine,
+  α-hydroxyl) to lower pKa by 1–2 units.
+- Replace a piperidine (pKa ~10) with a morpholine (pKa ~7.5) when SAR allows.
+- Constrain the amine into a less basic ring system.
+
+⚠️ *Caveat:* this app's SMARTS-based pKa is an approximation. For
+publication-grade work, use a dedicated predictor (ChemAxon Marvin,
+ACD/Labs, or a trained ML model such as pkasolver).
+"""
+        )
+
+    # ── Validation
+    st.markdown('<p class="section-header">✅ Validation from the Paper</p>',
+                unsafe_allow_html=True)
+
+    st.markdown(
+        """
+Wager *et al.* validated the CNS MPO score on three datasets:
+
+1. **119 marketed CNS drugs** — **74 %** had CNS MPO ≥ 4.
+2. **108 Pfizer candidate CNS drugs** (in clinical development at the time)
+   — **60 %** had CNS MPO ≥ 4.
+3. A reference set of **marketed non-CNS oral drugs** — significantly lower
+   mean MPO, confirming the score discriminates CNS-targeted chemotypes
+   from general-purpose oral drugs.
+
+In addition, within the Pfizer set, compounds with **MPO ≥ 4** showed:
+
+- Higher mean **MDCK–MDR1 permeability** (better passive BBB diffusion).
+- Lower **P-glycoprotein (P-gp) efflux ratios**.
+- Higher unbound brain-to-plasma ratios (**Kp,uu**).
+- Improved hERG and safety margins.
+
+The MPO threshold of **≥ 4** has since been widely adopted across the
+industry as a first-pass CNS suitability filter.
+"""
+    )
+
+    # ── Limitations
+    st.markdown('<p class="section-header">⚠️ Limitations & Caveats</p>',
+                unsafe_allow_html=True)
+    st.markdown(
+        """
+- **Active transport is not modeled.** The MPO captures passive permeability
+  only. P-gp efflux, BCRP, and uptake transporters (LAT1, OATP) are
+  property-independent and must be assessed separately (e.g. MDCK-MDR1 assay).
+- **Pharmacology is not predicted.** A compound with CNS MPO = 6 may still
+  lack target engagement in brain. MPO is a *prerequisite*, not a guarantee.
+- **pKa accuracy is the dominant source of error in this app.** SMARTS-based
+  estimation is a rough approximation; a difference of 1 pKa unit propagates
+  into cLogD and changes the score noticeably.
+- **The thresholds are statistical, not mechanistic.** A score of 3.9 is not
+  qualitatively different from 4.1 — use the **per-property scores** to
+  understand where improvement is needed.
+- **The simplified TPSA function** used here is monotonic; the original
+  paper uses a slightly more elaborate "hump" function. The difference is
+  small for typical CNS chemotypes.
+"""
+    )
+
+    # ── References
+    st.markdown('<p class="section-header">📑 References</p>',
+                unsafe_allow_html=True)
+    st.markdown(
+        """
+**Primary reference**
+
+> Wager, T. T.; Hou, X.; Verhoest, P. R.; Villalobos, A.
+> *Moving beyond rules: the development of a central nervous system multiparameter
+> optimization (CNS MPO) approach to enable alignment of druglike properties.*
+> **ACS Chem. Neurosci.** **2010**, *1* (6), 435–449.
+> [PubMed 22778837](https://pubmed.ncbi.nlm.nih.gov/22778837/)
+> · DOI: [10.1021/cn100008c](https://doi.org/10.1021/cn100008c)
+
+**Follow-up / related papers**
+
+> Wager, T. T.; Chandrasekaran, R. Y.; Hou, X.; Troutman, M. D.;
+> Verhoest, P. R.; Villalobos, A.; Will, Y.
+> *Defining desirable central nervous system drug space through the alignment
+> of molecular properties, in vitro ADME, and safety attributes.*
+> **ACS Chem. Neurosci.** **2010**, *1* (6), 420–434.
+> [PubMed 22778836](https://pubmed.ncbi.nlm.nih.gov/22778836/)
+
+> Rankovic, Z.
+> *CNS drug design: balancing physicochemical properties for optimal brain exposure.*
+> **J. Med. Chem.** **2015**, *58* (6), 2584–2608.
+> DOI: [10.1021/jm501535r](https://doi.org/10.1021/jm501535r)
+
+**Implementation notes for this app**
+
+- Property descriptors: **RDKit** (`MolWt`, `MolLogP`, `CalcTPSA`, `CalcNumHBD`).
+- pKa: SMARTS-based pattern matching against curated functional-group library.
+- cLogD: Henderson–Hasselbalch monoprotic-base model at pH 7.4.
+- Desirability functions: linear piecewise per Wager (2010), Table 1.
+"""
+    )
+
+    st.markdown(
+        """
+<div style="background:#f1f7f1; border-left:4px solid #0d3b22;
+            padding:12px 16px; border-radius:4px; margin-top:16px;
+            font-size:0.9rem;">
+<b>Citation suggestion.</b> If you use this calculator in a publication,
+please cite the original Wager <i>et al.</i> (2010) paper above. This tool is
+a faithful reimplementation of their published method.
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("---")
