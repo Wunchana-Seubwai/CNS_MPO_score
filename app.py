@@ -212,7 +212,7 @@ def generate_assessment(props: dict, scores: dict, total: float) -> dict:
     elif props["MW"] <= 500:
         commentary.append(("MW", "warn",
             f"Molecular weight ({props['MW']:.1f} Da) is acceptable but above the "
-            f"optimal 360 Da threshold — heavier molecules cross the BBB less efficiently."))
+            f"optimal 360 Da threshold: heavier molecules cross the BBB less efficiently."))
     else:
         commentary.append(("MW", "bad",
             f"Molecular weight ({props['MW']:.1f} Da) exceeds the upper limit of 500 Da. "
@@ -235,7 +235,7 @@ def generate_assessment(props: dict, scores: dict, total: float) -> dict:
     # cLogD
     if props["cLogD"] <= 2:
         commentary.append(("cLogD", "good",
-            f"cLogD at pH 7.4 ({props['cLogD']:.2f}) is optimal — favorable distribution "
+            f"cLogD at pH 7.4 ({props['cLogD']:.2f}) is optimal favorable distribution "
             f"between aqueous and lipid phases."))
     elif props["cLogD"] <= 4:
         commentary.append(("cLogD", "warn",
@@ -263,7 +263,7 @@ def generate_assessment(props: dict, scores: dict, total: float) -> dict:
     # HBD
     if props["HBD"] == 0:
         commentary.append(("HBD", "good",
-            f"No H-bond donors — ideal for BBB crossing."))
+            f"No H-bond donors: ideal for BBB crossing."))
     elif props["HBD"] <= 2:
         commentary.append(("HBD", "warn",
             f"{props['HBD']} H-bond donor(s) — still acceptable but each additional "
@@ -280,7 +280,7 @@ def generate_assessment(props: dict, scores: dict, total: float) -> dict:
             f"at physiological pH supports passive permeability."))
     elif props["pKa"] <= 10:
         commentary.append(("pKa", "warn",
-            f"pKa ({props['pKa']:.1f}) is elevated — the compound is largely "
+            f"pKa ({props['pKa']:.1f}) is elevated the compound is largely "
             f"protonated at pH 7.4, reducing passive BBB diffusion."))
     else:
         commentary.append(("pKa", "bad",
